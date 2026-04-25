@@ -12,7 +12,7 @@ import {
   apiSuccess,
 } from "@/middleware/auth";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
@@ -191,3 +191,4 @@ export const GET = withAuth(async (req, { auth }) => {
 
   return apiSuccess(result);
 });
+                                    
