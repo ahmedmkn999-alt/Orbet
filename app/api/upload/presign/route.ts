@@ -8,7 +8,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { withAuth, apiError, apiSuccess } from "@/middleware/auth";
 import { uploadLimiter } from "@/lib/redis";
 
-export const runtime = "edge";
+export const runtime = "nodejs"; // AWS SDK presigner is not Edge-compatible
 
 // R2 is S3-compatible
 const r2 = new S3Client({
