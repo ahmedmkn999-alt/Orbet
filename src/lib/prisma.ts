@@ -5,8 +5,10 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
-// Required for Neon WebSocket connections on Edge
-neonConfig.webSocketConstructor = ws;
+// Use ws npm package only on Node.js — Edge Runtime has native WebSocket built-in
+if (typeof WebSocket === 'undefined') {
+  neonConfig.webSocketConstructor = ws;
+}
 
 declare global {
   var __prisma: PrismaClient | undefined;
