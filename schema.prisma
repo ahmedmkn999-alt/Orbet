@@ -1,0 +1,154 @@
+// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  clerkId       String    @unique
+  username      String    @unique
+  displayName   String
+  avatarUrl     String?
+  status        UserStatus @default(OFFLINE)
+  lastSeenAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  memberships   ChannelMember[]
+  sentMessages  Message[]       @relation("SentMessages")
+  reactions     Reaction[]
+
+  @@index([clerkId])
+  @@index([username])
+}
+
+model Channel {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  type        ChannelType @default(PUBLIC)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  members     ChannelMember[]
+  messages    Message[]
+
+  @@index([slug])
+  @@index([type])
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  lastReadAt DateTime?
+
+  userId    String
+  channelId String
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+  @@index([channelId])
+  @@index([userId])
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  content     String?     @db.Text
+  type        MessageType @default(TEXT)
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+
+  senderId    String
+  channelId   String
+  parentId    String?     // For threaded replies
+
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id])
+  channel     Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parent      Message?  @relation("ThreadReplies", fields: [parentId], references: [id])
+  replies     Message[] @relation("ThreadReplies")
+  attachments Attachment[]
+  reactions   Reaction[]
+
+  @@index([channelId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@index([parentId])
+}
+
+model Attachment {
+  id        String         @id @default(cuid())
+  type      AttachmentType
+  url       String
+  filename  String
+  mimeType  String
+  size      Int
+  width     Int?
+  height    Int?
+  duration  Int?           // For audio/video in seconds
+  createdAt DateTime       @default(now())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  userId    String
+  messageId String
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+  @@index([messageId])
+}
+
+enum UserStatus {
+  ONLINE
+  AWAY
+  BUSY
+  OFFLINE
+}
+
+enum ChannelType {
+  PUBLIC
+  PRIVATE
+  DIRECT
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  ATTACHMENT
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
