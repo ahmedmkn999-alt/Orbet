@@ -5,7 +5,7 @@ import { pusherServer, pusherChannels, pusherEvents } from "@/lib/pusher";
 import { typing, messageLimiter } from "@/lib/redis";
 import { withAuth, verifyChannelMember, apiError, apiSuccess } from "@/middleware/auth";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 // ─── POST /api/channels/[channelId]/typing ────────────────────────────────────
 // Client calls this when user starts/stops typing
